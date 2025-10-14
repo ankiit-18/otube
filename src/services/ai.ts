@@ -1,10 +1,12 @@
 import { Video, Message, Question } from '../types';
 
+const API_BASE = import.meta.env.VITE_API_BASE || '';
+
 // Real AI responses using FastAPI backend
 export async function generateSummary(transcript: string, language: string = 'en'): Promise<string> {
   if (!transcript.trim()) return 'Transcript not available to summarize.';
   
-  const res = await fetch('/api/summary', {
+  const res = await fetch(`${API_BASE}/api/summary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transcript: transcript, language }),
@@ -21,7 +23,7 @@ export async function generateSummary(transcript: string, language: string = 'en
 export async function extractKeyPoints(transcript: string, language: string = 'en'): Promise<string[]> {
   if (!transcript.trim()) return [];
   
-  const res = await fetch('/api/keypoints', {
+  const res = await fetch(`${API_BASE}/api/keypoints`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transcript: transcript, language }),
@@ -38,7 +40,7 @@ export async function extractKeyPoints(transcript: string, language: string = 'e
 export async function generateQuestions(transcript: string, language: string = 'en'): Promise<Question[]> {
   if (!transcript.trim()) return [];
   
-  const res = await fetch('/api/questions', {
+  const res = await fetch(`${API_BASE}/api/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transcript: transcript, language }),
@@ -53,7 +55,7 @@ export async function generateQuestions(transcript: string, language: string = '
 }
 
 export async function answerQuestion(question: string, context: Video, chatHistory: Message[], language: string = 'en'): Promise<string> {
-  const res = await fetch('/api/answer', {
+  const res = await fetch(`${API_BASE}/api/answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, video: context, history: chatHistory.slice(-6), language }),
@@ -70,7 +72,7 @@ export async function answerQuestion(question: string, context: Video, chatHisto
 export async function processYouTubeVideo(url: string, language: string = 'en'): Promise<Video> {
   try {
     // Use the process-video endpoint
-    const response = await fetch('/api/process-video', {
+    const response = await fetch(`${API_BASE}/api/process-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url, language }),
@@ -107,7 +109,7 @@ export async function processYouTubeVideo(url: string, language: string = 'en'):
 export async function generateTeaching(summary: string, language: string = 'en'): Promise<string> {
   if (!summary.trim()) return '';
   
-  const res = await fetch('/api/teach', {
+  const res = await fetch(`${API_BASE}/api/teach`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ summary: summary, language }),

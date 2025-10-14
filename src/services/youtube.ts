@@ -39,6 +39,8 @@ export function extractVideoId(url: string): string | null {
   return null;
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE || '';
+
 export function getThumbnailUrl(videoId: string): string {
   // Try maxresdefault first, fallback to hqdefault if not available
   return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
@@ -51,7 +53,7 @@ export async function fetchVideoDetails(videoId: string): Promise<{ title: strin
 
 export async function fetchTranscript(videoId: string): Promise<string> {
   try {
-    const res = await fetch(`/api/transcript/${encodeURIComponent(videoId)}`, {
+    const res = await fetch(`${API_BASE}/api/transcript/${encodeURIComponent(videoId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
