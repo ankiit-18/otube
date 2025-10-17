@@ -29,8 +29,7 @@ export function ExtraInfo({ video, language, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-black/30" onClick={onClose} />
-      <div className="w-full max-w-xl h-full bg-white shadow-2xl border-l border-gray-200 p-5 overflow-y-auto">
+      <div className="w-full max-w-xl h-full bg-white shadow-2xl border-r border-gray-200 p-5 overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Info className="w-5 h-5 text-amber-600" />
@@ -47,6 +46,7 @@ export function ExtraInfo({ video, language, onClose }) {
           <div className="prose max-w-none">{formatText(content)}</div>
         )}
       </div>
+      <div className="flex-1 bg-black/30" onClick={onClose} />
     </div>
   );
 }
