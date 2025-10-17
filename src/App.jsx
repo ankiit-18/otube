@@ -4,6 +4,7 @@ import { VideoSummary } from './components/VideoSummary';
 import { ChatInterface } from './components/ChatInterface';
 import { QuestionList } from './components/QuestionList';
 import { MindMap } from './components/MindMap';
+import { ExtraInfo } from './components/ExtraInfo';
 import { LanguageSelector } from './components/LanguageSelector';
 import { processYouTubeVideo, generateQuestions, answerQuestion, generateSummary, extractKeyPoints } from './services/ai';
 import { GraduationCap, Sparkles } from 'lucide-react';
@@ -18,6 +19,7 @@ function App() {
   const [needsTranscript, setNeedsTranscript] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showMindMap, setShowMindMap] = useState(false);
+  const [showExtraInfo, setShowExtraInfo] = useState(false);
 
   const handleVideoSubmit = async (url) => {
     try {
@@ -124,7 +126,29 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <header className="text-center space-y-4 py-8">
+        <header className="relative text-center space-y-4 py-8">
+          {/* Top-left Extra Info button */}
+          <div className="absolute left-4 top-4">
+            <button
+              onClick={() => setShowExtraInfo(true)}
+              disabled={!video}
+              className="px-3 py-1.5 rounded-md border border-amber-200 text-amber-700 bg-white/80 backdrop-blur hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              Extra Info
+            </button>
+          </div>
+
+          {/* Top-right Mind Map button */}
+          <div className="absolute right-4 top-4">
+            <button
+              onClick={() => setShowMindMap(true)}
+              disabled={!video}
+              className="px-3 py-1.5 rounded-md border border-blue-200 text-blue-700 bg-white/80 backdrop-blur hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              Mind Map
+            </button>
+          </div>
+
           <div className="flex items-center justify-center gap-3">
             <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-lg">
               <GraduationCap className="w-10 h-10 text-white" />
@@ -147,15 +171,6 @@ function App() {
                 selectedLanguage={selectedLanguage} 
                 onLanguageChange={setSelectedLanguage} 
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowMindMap(true)}
-                disabled={!video}
-                className="px-3 py-1.5 rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Mind Map
-              </button>
             </div>
           </div>
         </header>
@@ -195,6 +210,9 @@ function App() {
 
         {showMindMap && video && (
           <MindMap video={video} onClose={() => setShowMindMap(false)} />
+        )}
+        {showExtraInfo && video && (
+          <ExtraInfo video={video} language={selectedLanguage} onClose={() => setShowExtraInfo(false)} />
         )}
 
         {!video && !loading && (
