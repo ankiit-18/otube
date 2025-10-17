@@ -3,6 +3,7 @@ import { VideoInput } from './components/VideoInput';
 import { VideoSummary } from './components/VideoSummary';
 import { ChatInterface } from './components/ChatInterface';
 import { QuestionList } from './components/QuestionList';
+import { MindMap } from './components/MindMap';
 import { LanguageSelector } from './components/LanguageSelector';
 import { processYouTubeVideo, generateQuestions, answerQuestion, generateSummary, extractKeyPoints } from './services/ai';
 import { GraduationCap, Sparkles } from 'lucide-react';
@@ -16,6 +17,7 @@ function App() {
   const [generatingMoreQuestions, setGeneratingMoreQuestions] = useState(false);
   const [needsTranscript, setNeedsTranscript] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [showMindMap, setShowMindMap] = useState(false);
 
   const handleVideoSubmit = async (url) => {
     try {
@@ -146,6 +148,15 @@ function App() {
                 onLanguageChange={setSelectedLanguage} 
               />
             </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMindMap(true)}
+                disabled={!video}
+                className="px-3 py-1.5 rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Mind Map
+              </button>
+            </div>
           </div>
         </header>
 
@@ -180,6 +191,10 @@ function App() {
               />
             </div>
           </div>
+        )}
+
+        {showMindMap && video && (
+          <MindMap video={video} onClose={() => setShowMindMap(false)} />
         )}
 
         {!video && !loading && (
