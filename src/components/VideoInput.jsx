@@ -1,15 +1,10 @@
 import { useState } from 'react';
 import { Youtube, Loader2 } from 'lucide-react';
 
-interface VideoInputProps {
-  onSubmit: (url: string) => Promise<void>;
-  loading: boolean;
-}
-
-export function VideoInput({ onSubmit, loading }: VideoInputProps) {
+export function VideoInput({ onSubmit, loading }) {
   const [url, setUrl] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (url.trim()) {
       await onSubmit(url.trim());

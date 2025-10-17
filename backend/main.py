@@ -13,7 +13,14 @@ app = FastAPI(title="YouTube AI Backend", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
+    # Allow any localhost/127.0.0.1 on ports 5170-5179 (Vite's common range)
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):517\d",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -170,10 +177,22 @@ async def generate_summary(request: SummaryRequest):
         transcript_chunk = chunk_text(request.transcript, 12000)
         
         prompt = f"""
-Please summarize the following YouTube transcript in a concise and clear way.
-Highlight the key points and main takeaways. Make it easy to read.
-
-IMPORTANT: Respond in {request.language} language.
+You are a helpful assistant. Produce a clean JSON summary for the transcript.
+Return ONLY valid JSON in this exact structure (no backticks, no extra text):
+{{
+  "summary": {{
+    "title": "Short title in {request.language}",
+    "paragraphs": ["Paragraph 1 in {request.language}", "Paragraph 2 ..."],
+    "bullets": ["Bullet 1 ...", "Bullet 2 ..."],
+    "sections": [
+      {{
+        "heading": "Section heading in {request.language}",
+        "bullets": ["Point 1 ...", "Point 2 ..."],
+        "paragraphs": ["Optional paragraph ..."]
+      }}
+    ]
+  }}
+}}
 
 Transcript:
 {transcript_chunk}
@@ -186,13 +205,28 @@ Transcript:
             temperature=0.7
         )
         
-        summary = response.choices[0].message.content
-        return {"summary": summary}
+        raw = response.choices[0].message.content
+        import json
+        if "```json" in raw:
+            raw = raw.split("```json")[1].split("```")[0]
+        elif "```" in raw:
+            raw = raw.split("```")[1].split("```")[0]
+        try:
+            data = json.loads(raw.strip())
+            if isinstance(data, dict) and "summary" in data:
+                return {"summary": data["summary"]}
+            # if the model returned the inner object directly
+            if isinstance(data, dict) and ("paragraphs" in data or "bullets" in data or "sections" in data):
+                return {"summary": data}
+        except Exception:
+            pass
+        # fallback to string content wrapped into JSON structure
+        return {"summary": {"title": "Summary", "paragraphs": [raw.strip()], "bullets": []}}
         
     except Exception as e:
         print(f"Summary generation failed: {e}")
         # Return fallback summary when API fails
-        return {"summary": f"This video covers important topics and provides valuable insights. The content discusses key concepts and practical applications that viewers can learn from and apply in their own context."}
+        return {"summary": {"title": "Summary", "paragraphs": ["This video covers important topics and provides valuable insights. The content discusses key concepts and practical applications that viewers can learn from and apply in their own context."], "bullets": []}}
 
 @app.post("/api/keypoints")
 async def extract_keypoints(request: SummaryRequest):
@@ -200,10 +234,14 @@ async def extract_keypoints(request: SummaryRequest):
         transcript_chunk = chunk_text(request.transcript, 12000)
         
         prompt = f"""
-Extract the key points from the following YouTube transcript. 
-Return them as a list of concise bullet points.
-
-IMPORTANT: Respond in {request.language} language.
+Extract the key points from the following YouTube transcript.
+Return ONLY valid JSON in this exact format (no extra text):
+{{
+  "keyPoints": [
+    {{ "id": "1", "text": "Concise key point in {request.language}" }},
+    {{ "id": "2", "text": "Another specific key point in {request.language}" }}
+  ]
+}}
 
 Transcript:
 {transcript_chunk}
@@ -217,19 +255,39 @@ Transcript:
         )
         
         keypoints_text = response.choices[0].message.content
-        # Split by lines and clean up
-        keypoints = [point.strip() for point in keypoints_text.split('\n') if point.strip()]
-        return {"keyPoints": keypoints}
+        # Try to parse JSON, handle fenced blocks
+        import json
+        if "```json" in keypoints_text:
+            keypoints_text = keypoints_text.split("```json")[1].split("```")[0]
+        elif "```" in keypoints_text:
+            keypoints_text = keypoints_text.split("```")[1].split("```")[0]
+
+        try:
+            data = json.loads(keypoints_text.strip())
+            key_points = data.get("keyPoints", [])
+            # ensure structure
+            normalized = []
+            for idx, kp in enumerate(key_points, start=1):
+                if isinstance(kp, dict) and "text" in kp:
+                    normalized.append({"id": str(kp.get("id", str(idx))), "text": kp["text"].strip()})
+                elif isinstance(kp, str):
+                    normalized.append({"id": str(idx), "text": kp.strip("- *•\t ")})
+            return {"keyPoints": normalized}
+        except Exception:
+            # Fallback: split lines into objects
+            lines = [p.strip().lstrip('- *•').strip() for p in keypoints_text.split('\n') if p.strip()]
+            normalized = [{"id": str(i+1), "text": t} for i, t in enumerate(lines)]
+            return {"keyPoints": normalized}
         
     except Exception as e:
         print(f"Key points extraction failed: {e}")
         # Return fallback key points when API fails
         return {"keyPoints": [
-            "Key concept 1: Understanding the fundamental principles",
-            "Key concept 2: Practical applications and real-world examples", 
-            "Key concept 3: Important considerations and best practices",
-            "Key concept 4: Common challenges and how to overcome them",
-            "Key concept 5: Future trends and developments in the field"
+            {"id": "1", "text": "Key concept 1: Understanding the fundamental principles"},
+            {"id": "2", "text": "Key concept 2: Practical applications and real-world examples"}, 
+            {"id": "3", "text": "Important considerations and best practices"},
+            {"id": "4", "text": "Common challenges and how to overcome them"},
+            {"id": "5", "text": "Future trends and developments in the field"}
         ]}
 
 @app.post("/api/questions")
@@ -444,7 +502,22 @@ Transcript:
                 max_tokens=500,
                 temperature=0.7
             )
-            summary = summary_response.choices[0].message.content
+            summary_raw = summary_response.choices[0].message.content
+            import json
+            if "```json" in summary_raw:
+                summary_raw = summary_raw.split("```json")[1].split("```")[0]
+            elif "```" in summary_raw:
+                summary_raw = summary_raw.split("```")[1].split("```")[0]
+            try:
+                sdata = json.loads(summary_raw.strip())
+                if isinstance(sdata, dict) and "summary" in sdata:
+                    summary = sdata["summary"]
+                elif isinstance(sdata, dict) and ("paragraphs" in sdata or "bullets" in sdata or "sections" in sdata):
+                    summary = sdata
+                else:
+                    summary = {"title": "Summary", "paragraphs": [summary_raw.strip()], "bullets": []}
+            except Exception:
+                summary = {"title": "Summary", "paragraphs": [summary_raw.strip()], "bullets": []}
             
             # Generate key points
             keypoints_prompt = f"""
@@ -465,18 +538,39 @@ Transcript:
             )
             
             keypoints_text = keypoints_response.choices[0].message.content
-            keypoints = [point.strip() for point in keypoints_text.split('\n') if point.strip()]
+            # Parse as JSON if possible, else fallback to lines
+            import json
+            if "```json" in keypoints_text:
+                keypoints_text = keypoints_text.split("```json")[1].split("```")[0]
+            elif "```" in keypoints_text:
+                keypoints_text = keypoints_text.split("```")[1].split("```")[0]
+            try:
+                data = json.loads(keypoints_text.strip())
+                kp_list = data.get("keyPoints") or data.get("points") or data.get("bullets")
+                if isinstance(kp_list, list):
+                    normalized = []
+                    for idx, kp in enumerate(kp_list, start=1):
+                        if isinstance(kp, dict) and "text" in kp:
+                            normalized.append({"id": str(kp.get("id", str(idx))), "text": kp["text"].strip()})
+                        elif isinstance(kp, str):
+                            normalized.append({"id": str(idx), "text": kp.strip('- *•\t ').strip()})
+                    keypoints = normalized
+                else:
+                    raise ValueError("No keyPoints array in JSON")
+            except Exception:
+                lines = [p.strip().lstrip('- *•').strip() for p in keypoints_text.split('\n') if p.strip()]
+                keypoints = [{"id": str(i+1), "text": t} for i, t in enumerate(lines)]
             
         except Exception as e:
             print(f"AI generation failed: {e}")
             # Fallback to English content when AI fails
             summary = f"This video covers important topics and provides valuable insights. The content discusses key concepts and practical applications that viewers can learn from and apply in their own context."
             keypoints = [
-                "Key concept 1: Understanding the fundamental principles",
-                "Key concept 2: Practical applications and real-world examples", 
-                "Key concept 3: Important considerations and best practices",
-                "Key concept 4: Common challenges and how to overcome them",
-                "Key concept 5: Future trends and developments in the field"
+                {"id": "1", "text": "Key concept 1: Understanding the fundamental principles"},
+                {"id": "2", "text": "Key concept 2: Practical applications and real-world examples"}, 
+                {"id": "3", "text": "Important considerations and best practices"},
+                {"id": "4", "text": "Common challenges and how to overcome them"},
+                {"id": "5", "text": "Future trends and developments in the field"}
             ]
         
         return {

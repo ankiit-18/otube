@@ -1,23 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Message } from '../types';
 import { Send, MessageCircle, Loader2 } from 'lucide-react';
 import { formatBoldText } from '../utils/textFormatting';
 
-interface ChatInterfaceProps {
-  messages: Message[];
-  onSendMessage: (message: string) => Promise<void>;
-  loading: boolean;
-}
-
-export function ChatInterface({ messages, onSendMessage, loading }: ChatInterfaceProps) {
+export function ChatInterface({ messages, onSendMessage, loading }) {
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (input.trim() && !loading) {
       await onSendMessage(input.trim());

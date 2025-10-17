@@ -1,23 +1,12 @@
 import { useState } from 'react';
 import { Globe, ChevronDown } from 'lucide-react';
 
-export interface Language {
-  code: string;
-  name: string;
-  flag: string;
-}
-
-const languages: Language[] = [
+const languages = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
 ];
 
-interface LanguageSelectorProps {
-  selectedLanguage: string;
-  onLanguageChange: (language: string) => void;
-}
-
-export function LanguageSelector({ selectedLanguage, onLanguageChange }: LanguageSelectorProps) {
+export function LanguageSelector({ selectedLanguage, onLanguageChange }) {
   const [isOpen, setIsOpen] = useState(false);
   
   const selectedLang = languages.find(lang => lang.code === selectedLanguage) || languages[0];

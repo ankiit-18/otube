@@ -1,20 +1,13 @@
 import { useState } from 'react';
-import { Question } from '../types';
 import { HelpCircle, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { formatBoldText } from '../utils/textFormatting';
 
-interface QuestionListProps {
-  questions: Question[];
-  onGenerateMore?: () => void;
-  generatingMore?: boolean;
-}
+export function QuestionList({ questions, onGenerateMore, generatingMore }) {
+  const [expandedId, setExpandedId] = useState(null);
 
-export function QuestionList({ questions, onGenerateMore, generatingMore }: QuestionListProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  if (!questions || questions.length === 0) return null;
 
-  if (questions.length === 0) return null;
-
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'easy':
         return 'bg-green-100 text-green-700 border-green-200';
@@ -57,7 +50,7 @@ export function QuestionList({ questions, onGenerateMore, generatingMore }: Ques
                       question.difficulty
                     )}`}
                   >
-                    {question.difficulty.toUpperCase()}
+                    {String(question.difficulty).toUpperCase()}
                   </span>
                 </div>
                 {expandedId === question.id ? (

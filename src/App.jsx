@@ -4,21 +4,20 @@ import { VideoSummary } from './components/VideoSummary';
 import { ChatInterface } from './components/ChatInterface';
 import { QuestionList } from './components/QuestionList';
 import { LanguageSelector } from './components/LanguageSelector';
-import { Video, Message, Question } from './types';
 import { processYouTubeVideo, generateQuestions, answerQuestion, generateSummary, extractKeyPoints } from './services/ai';
 import { GraduationCap, Sparkles } from 'lucide-react';
 
 function App() {
-  const [video, setVideo] = useState<Video | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [video, setVideo] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [generatingMoreQuestions, setGeneratingMoreQuestions] = useState(false);
   const [needsTranscript, setNeedsTranscript] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-  const handleVideoSubmit = async (url: string) => {
+  const handleVideoSubmit = async (url) => {
     try {
       setLoading(true);
       setVideo(null);
@@ -48,7 +47,7 @@ function App() {
       setLoading(true);
       const summary = await generateSummary(pasted, selectedLanguage);
       const keyPoints = await extractKeyPoints(pasted, selectedLanguage);
-      const updated: Video = { ...video, transcript: pasted, summary, keyPoints };
+      const updated = { ...video, transcript: pasted, summary, keyPoints };
       setVideo(updated);
       const generatedQuestions = await generateQuestions(pasted, selectedLanguage);
       setQuestions(generatedQuestions);
@@ -61,10 +60,10 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content) => {
     if (!video) return;
 
-    const userMessage: Message = {
+    const userMessage = {
       id: Date.now().toString(),
       role: 'user',
       content,
@@ -77,7 +76,7 @@ function App() {
     try {
       const response = await answerQuestion(content, video, messages, selectedLanguage);
 
-      const assistantMessage: Message = {
+      const assistantMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response,
@@ -87,7 +86,7 @@ function App() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error getting response:', error);
-      const errorMessage: Message = {
+      const errorMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.',
@@ -106,7 +105,6 @@ function App() {
       setGeneratingMoreQuestions(true);
       const newQuestions = await generateQuestions(video.transcript, selectedLanguage);
       
-      // Add new questions with unique IDs to avoid conflicts
       const questionsWithNewIds = newQuestions.map((q, index) => ({
         ...q,
         id: `${Date.now()}-${index}`

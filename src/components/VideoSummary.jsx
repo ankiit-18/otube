@@ -1,16 +1,10 @@
 import { useState } from 'react';
-import { Video } from '../types';
 import { BookOpen, Lightbulb, Video as VideoIcon } from 'lucide-react';
 import { generateTeaching } from '../services/ai';
 import { formatText, formatBoldText } from '../utils/textFormatting';
 
-interface VideoSummaryProps {
-  video: Video;
-  language: string;
-}
-
-export function VideoSummary({ video, language }: VideoSummaryProps) {
-  const [teaching, setTeaching] = useState<string>('');
+export function VideoSummary({ video, language }) {
+  const [teaching, setTeaching] = useState('');
   const [teachLoading, setTeachLoading] = useState(false);
 
   const handleTeach = async () => {
@@ -57,10 +51,58 @@ export function VideoSummary({ video, language }: VideoSummaryProps) {
               <h3 className="text-2xl font-semibold text-gray-900">Summary</h3>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-6 shadow-sm">
-              <div className="prose prose-blue max-w-none leading-relaxed text-gray-800">
-                {formatText(video.summary)}
-              </div>
+            <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-6 shadow-sm space-y-4">
+              {typeof video.summary === 'string' ? (
+                <div className="prose prose-blue max-w-none leading-relaxed text-gray-800">
+                  {formatText(video.summary)}
+                </div>
+              ) : (
+                (() => {
+                  const s = video.summary || {};
+                  return (
+                    <div className="space-y-4">
+                      {s.title && <h4 className="text-xl font-semibold text-gray-900">{s.title}</h4>}
+                      {Array.isArray(s.paragraphs) && s.paragraphs.length > 0 && (
+                        <div className="space-y-3">
+                          {s.paragraphs.map((p, i) => (
+                            <p key={i} className="text-gray-800 leading-relaxed">{formatBoldText(p)}</p>
+                          ))}
+                        </div>
+                      )}
+                      {Array.isArray(s.bullets) && s.bullets.length > 0 && (
+                        <ul className="list-disc list-inside space-y-1 text-gray-800">
+                          {s.bullets.map((b, i) => (
+                            <li key={i}>{formatBoldText(b)}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {Array.isArray(s.sections) && s.sections.length > 0 && (
+                        <div className="space-y-5">
+                          {s.sections.map((sec, idx) => (
+                            <div key={idx}>
+                              {sec.heading && <h5 className="text-lg font-semibold text-gray-900 mb-1">{sec.heading}</h5>}
+                              {Array.isArray(sec.paragraphs) && sec.paragraphs.length > 0 && (
+                                <div className="space-y-2">
+                                  {sec.paragraphs.map((p, i) => (
+                                    <p key={i} className="text-gray-800 leading-relaxed">{formatBoldText(p)}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {Array.isArray(sec.bullets) && sec.bullets.length > 0 && (
+                                <ul className="list-disc list-inside space-y-1 text-gray-800 mt-2">
+                                  {sec.bullets.map((b, i) => (
+                                    <li key={i}>{formatBoldText(b)}</li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              )}
             </div>
 
             <div className="mt-5">
@@ -94,13 +136,13 @@ export function VideoSummary({ video, language }: VideoSummaryProps) {
               <ul className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
                 {video.keyPoints.map((point, index) => (
                   <li
-                    key={index}
+                    key={point.id || index}
                     className="flex gap-3 items-start bg-amber-50 p-4 rounded-xl border border-amber-100 hover:bg-amber-100 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <span className="flex-shrink-0 w-7 h-7 bg-amber-500 text-white rounded-full flex items-center justify-center font-semibold">
                       {index + 1}
                     </span>
-                    <p className="text-gray-700 leading-relaxed">{formatBoldText(point)}</p>
+                    <p className="text-gray-700 leading-relaxed">{formatBoldText(point.text)}</p>
                   </li>
                 ))}
               </ul>
