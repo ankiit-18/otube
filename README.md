@@ -37,7 +37,24 @@ Backend (in `backend/.env`):
 - `GROQ_API_KEY` — required for Groq LLM
 
 Frontend (in `.env`):
+- `VITE_SUPABASE_URL` — required for authentication (your Supabase project URL)
+- `VITE_SUPABASE_ANON_KEY` — required for authentication (your Supabase anon/public key)
 - `VITE_API_BASE` — optional. Leave empty to use Vite proxy locally. Set to your deployed backend URL in production (e.g. `https://your-backend.onrender.com`).
+
+### Setting up Supabase Authentication
+
+1. Create a free account at [supabase.com](https://supabase.com)
+2. Create a new project
+3. Go to Project Settings → API
+4. Copy your Project URL and anon/public key
+5. Create a `.env` file in the root directory:
+   ```
+   VITE_SUPABASE_URL=your_project_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   VITE_API_BASE=
+   ```
+6. In Supabase dashboard, go to Authentication → Email Templates to customize confirmation emails (optional)
+7. Users will need to verify their email before logging in
 
 ## Repository Structure
 
@@ -47,10 +64,13 @@ backend/
   requirements.txt        # Python deps
 
 src/
-  App.jsx                 # Main app
+  App.jsx                 # Main app with routing
   main.jsx                # Vite entry
   index.css               # Styles
   components/
+    Home.jsx              # Main video learning interface (protected)
+    SignUp.jsx            # User registration page
+    Login.jsx             # User login page
     VideoInput.jsx        # Paste YouTube URL
     VideoSummary.jsx      # Summary + Key Points rendering
     QuestionList.jsx      # Practice questions UI
@@ -63,7 +83,7 @@ src/
   utils/
     textFormatting.jsx    # Bold + text formatting helpers
   lib/
-    supabase.js           # Placeholder (if used)
+    supabase.js           # Supabase client for authentication
   types/
     index.js              # JSDoc typedefs for Video/Question/etc.
 
@@ -115,12 +135,15 @@ Notes:
 
 ## Frontend Features
 
+- Authentication: User signup/login with Supabase (email verification required)
+- Protected Routes: Main app accessible only to authenticated users
 - Paste YouTube link → process video → show summary, key points, questions
 - Chat Q&A about the video
 - “Explain in detail” teaching expansion
 - Language selector; prompts request responses in the selected language
 - Mind Map: button in header opens a side panel visualizing summary and key points
 - Markdown-like formatting: bold with `**text**`, sections, bullets, numbers
+- Sign out button in the header
 
 ## Mind Map Usage
 
